@@ -1,4 +1,4 @@
-import { Mindmap } from "../shared/types";
+import type { Mindmap } from "../shared/types";
 
 export const MOCK_MINDMAP: Mindmap = {
   title: "Photosynthesis Overview (MOCK)",
