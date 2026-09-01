@@ -1,7 +1,7 @@
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import { v4 as uuidv4 } from "uuid";
-import { generateMindmap } from "./ai/generator";
+import { generateMindmap } from "./ai/gemini.service";
 
 import "dotenv/config";
 
