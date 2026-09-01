@@ -1,6 +1,6 @@
 import type { Mindmap, MindmapSummary, ProgressEvent } from "../types";
 
-const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
+const API_BASE = import.meta.env.API_URL ?? "http://localhost:3001";
 
 /** An error the backend described. Carries its code so the UI can react to it. */
 export class ApiError extends Error {
