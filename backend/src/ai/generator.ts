@@ -1,51 +1,89 @@
-import OpenAI from "openai";
-import { zodResponseFormat } from "openai/helpers/zod";
-import { MindmapSchema, Mindmap } from "../../../packages/shared/types";
-import { MOCK_MINDMAP } from "./mockData";
+import { Mindmap, MindmapSchema } from "./../../../packages/shared/types";
+import { GoogleGenerativeAI, Schema, Type } from "@google/generative-ai";
+import { Mindmap } from "../../../packages/shared/types";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 export async function generateMindmap(
   text: string,
   retries = 1,
 ): Promise<Mindmap> {
-  // 1. Edge Cases
   if (!text || text.trim().length < 20) {
     throw new Error("Input is too short to generate a meaningful mindmap.");
   }
   if (text.length > 30000) {
-    throw new Error("Input exceeds maximum length token limits.");
+    throw new Error("Input exceeds maximum length limits.");
   }
 
-  // 2. Mock Mode
   if (process.env.MOCK_MODE === "true") {
     return new Promise((resolve) =>
       setTimeout(() => resolve(MOCK_MINDMAP), 1500),
     );
   }
 
-  // 3. AI Generation & Validation
-  try {
-    const completion = await openai.beta.chat.completions.parse({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are an expert analyst. Extract a structured mindmap from the following text. You must return exactly 5 to 9 nodes. The rootId must exactly match one of the node IDs. Connections must only use IDs that exist in your nodes array.",
+  const jsonSchema: Schema = {
+    type: Type.OBJECT,
+    properties: {
+      title: { type: Type.STRING },
+      rootId: { type: Type.STRING },
+      nodes: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            id: {
+              type: Type.STRING,
+              description: "Stable and unique identifier",
+            },
+            label: { type: Type.STRING, description: "1-4 words max" },
+            summary: { type: Type.STRING, description: "One sentence summary" },
+          },
+          required: ["id", "label", "summary"],
         },
-        { role: "user", content: text },
-      ],
-      response_format: zodResponseFormat(MindmapSchema, "mindmap"),
-      temperature: 0.2,
-    });
+      },
+      connections: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            from: { type: Type.STRING, description: "ID of the origin node" },
+            to: {
+              type: Type.STRING,
+              description: "ID of the destination node",
+            },
+            label: { type: Type.STRING, description: "Relationship label" },
+          },
+          required: ["from", "to", "label"],
+        },
+      },
+    },
+    required: ["title", "rootId", "nodes", "connections"],
+  };
 
-    const parsedData = completion.choices[0].message.parsed;
+  const model = genAI.getGenerativeModel({
+    model: "gemini-3.7-flash",
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: jsonSchema,
+      temperature: 0.2, // Low temperature for deterministic analysis
+    },
+  });
 
-    // Enforce cross-field validation (Zod .refine constraints)
+  try {
+    const prompt = `You are an expert analyst. Extract a structured mindmap from the following text. 
+    You must return exactly 5 to 9 nodes. 
+    The rootId must exactly match one of the node IDs. 
+    Connections must only use IDs that exist in your nodes array.
+    
+    TEXT TO ANALYZE: ${text}`;
+
+    const result = await model.generateContent(prompt);
+
+    const responseText = result.response.text();
+    const parsedData = JSON.parse(responseText);
+
     return MindmapSchema.parse(parsedData);
   } catch (error) {
-    // 4. Corrective Retry Logic
     if (retries > 0) {
       console.warn(`Validation failed. Retrying... (${retries} left)`, error);
       return generateMindmap(text, retries - 1);
