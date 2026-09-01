@@ -238,4 +238,48 @@ describe("streaming progress", () => {
     expect(within(log).getByText(/retrying with corrections/i)).toBeInTheDocument();
     expect(within(log).getByText(/node ids must be unique/i)).toBeInTheDocument();
   });
+
+  it("shows a loading indicator while generation is in flight", async () => {
+    let finish: ((mindmap: Mindmap) => void) | undefined;
+    vi.mocked(streamMindmap).mockImplementation(
+      () =>
+        new Promise<Mindmap>((resolve) => {
+          finish = resolve;
+        }),
+    );
+
+    render(<App />);
+    await generate();
+
+    expect((await screen.findAllByRole("status")).length).toBeGreaterThan(0);
+    expect(screen.getByRole("button", { name: /processing/i })).toBeDisabled();
+
+    finish!(MINDMAP);
+
+    await waitFor(() => expect(screen.queryAllByRole("status")).toHaveLength(0));
+  });
+
+  it("retires the finished progress log instead of leaving it on screen", async () => {
+    vi.mocked(streamMindmap).mockImplementation(async (_text, options) => {
+      options?.onProgress?.({ phase: "validated", message: "Validated 3 nodes" });
+      return MINDMAP;
+    });
+
+    render(<App />);
+    await generate();
+
+    // It is shown while the run completes...
+    expect(
+      await screen.findByRole("region", { name: /generation progress/i }),
+    ).toBeInTheDocument();
+
+    // ...then clears itself once there is nothing left to report.
+    await waitFor(
+      () =>
+        expect(
+          screen.queryByRole("region", { name: /generation progress/i }),
+        ).not.toBeInTheDocument(),
+      { timeout: 4000 },
+    );
+  });
 });

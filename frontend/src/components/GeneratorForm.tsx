@@ -4,9 +4,10 @@ import type { FormEvent } from "react";
 export const MIN_INPUT_CHARS = 20;
 export const MAX_INPUT_CHARS = 12000;
 
-const SAMPLES: { label: string; text: string }[] = [
+const SAMPLES: { label: string; fill: string; text: string }[] = [
   {
     label: "SCIENCE",
+    fill: "var(--cat-3)",
     text:
       "Photosynthesis is the process by which plants convert light energy into chemical " +
       "energy. Chlorophyll, the green pigment in leaves, absorbs sunlight and passes that " +
@@ -17,6 +18,7 @@ const SAMPLES: { label: string; text: string }[] = [
   },
   {
     label: "MEETING",
+    fill: "var(--cat-2)",
     text:
       "Sprint planning notes. The team agreed the checkout rewrite is the headline " +
       "deliverable for this sprint. The main blocker is the payment provider sandbox, which " +
@@ -27,6 +29,7 @@ const SAMPLES: { label: string; text: string }[] = [
   },
   {
     label: "ARTICLE",
+    fill: "var(--cat-5)",
     text:
       "Remote work moved from a rare perk to a default operating mode for large parts of " +
       "the economy. Distributed teams lean on written, asynchronous updates rather than " +
@@ -78,7 +81,8 @@ export default function GeneratorForm({
               onClick={() => onChange(sample.text)}
               disabled={isLoading}
               title={`Load a sample ${sample.label.toLowerCase()} input`}
-              className="border-2 border-line bg-inset px-2 py-1 font-terminal text-base uppercase leading-none text-ink hover:bg-highlight hover:text-on-highlight disabled:opacity-50"
+              className="pixel-chip px-2 py-1 font-terminal text-base uppercase leading-none disabled:opacity-50"
+              style={{ background: sample.fill, color: "var(--on-cat)" }}
             >
               {sample.label}
             </button>
@@ -111,7 +115,16 @@ export default function GeneratorForm({
         disabled={isLoading || tooShort || tooLong}
         className="pixel-btn w-full bg-highlight py-2.5 font-pixel text-xs font-bold uppercase tracking-wider text-on-highlight disabled:cursor-not-allowed disabled:bg-muted disabled:text-surface"
       >
-        {isLoading ? ">>> PROCESSING..." : "► COMPILE MAP"}
+        {isLoading ? (
+          <span className="inline-flex items-center gap-2">
+            <span className="pixel-blink" aria-hidden="true">
+              ▮
+            </span>
+            PROCESSING
+          </span>
+        ) : (
+          "► COMPILE MAP"
+        )}
       </button>
     </form>
   );

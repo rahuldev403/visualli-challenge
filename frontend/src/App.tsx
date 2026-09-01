@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactFlow, { Background, Controls, type Node } from "reactflow";
 
 import MindmapNode, { type MindmapNodeData } from "./components/MindmapNode";
@@ -6,6 +6,7 @@ import GeneratorForm from "./components/GeneratorForm";
 import ProgressLog from "./components/ProgressLog";
 import SummaryPanel from "./components/SummaryPanel";
 import HistoryList from "./components/HistoryList";
+import LoadingBar from "./components/LoadingBar";
 import { buildGraphElements } from "./utils/layout";
 import { useTheme } from "./hooks/useTheme";
 import {
@@ -29,7 +30,19 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [expandingNodeId, setExpandingNodeId] = useState<string | null>(null);
   const [progress, setProgress] = useState<ProgressEvent[]>([]);
+  const [isDismissingProgress, setIsDismissingProgress] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Timers that retire the finished progress log. Held in a ref so a second
+  // run, or an unmount, can cancel a dismissal still in flight.
+  const dismissTimers = useRef<number[]>([]);
+
+  const cancelDismiss = useCallback(() => {
+    dismissTimers.current.forEach(clearTimeout);
+    dismissTimers.current = [];
+  }, []);
+
+  useEffect(() => cancelDismiss, [cancelDismiss]);
 
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
@@ -87,9 +100,11 @@ export default function App() {
         : "Something went wrong.";
 
   const handleGenerate = useCallback(async () => {
+    cancelDismiss();
     setIsLoading(true);
     setError(null);
     setProgress([]);
+    setIsDismissingProgress(false);
     setSelectedNodeId(null);
 
     try {
@@ -98,23 +113,35 @@ export default function App() {
       });
       setMindmap(result);
       await refreshHistory();
+
+      // Let the completed log read for a beat, fade it, then drop it. On
+      // failure it stays put — that is exactly when you want to see it.
+      dismissTimers.current.push(
+        window.setTimeout(() => setIsDismissingProgress(true), 1400),
+        window.setTimeout(() => {
+          setProgress([]);
+          setIsDismissingProgress(false);
+        }, 1900),
+      );
     } catch (caught) {
       setError(describeError(caught));
     } finally {
       setIsLoading(false);
     }
-  }, [inputText, refreshHistory]);
+  }, [cancelDismiss, inputText, refreshHistory]);
 
   const handleSelectFromHistory = useCallback(async (id: string) => {
+    cancelDismiss();
     setError(null);
     setProgress([]);
+    setIsDismissingProgress(false);
     setSelectedNodeId(null);
     try {
       setMindmap(await getMindmap(id));
     } catch (caught) {
       setError(describeError(caught));
     }
-  }, []);
+  }, [cancelDismiss]);
 
   const handleExpand = useCallback(
     async (nodeId: string) => {
@@ -150,7 +177,7 @@ export default function App() {
             type="button"
             onClick={toggleTheme}
             aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
-            className="shrink-0 border-2 border-line bg-line px-2.5 py-1.5 font-terminal text-lg uppercase leading-none tracking-wide text-highlight hover:bg-highlight hover:text-on-highlight"
+            className="pixel-chip shrink-0 bg-highlight px-2.5 py-1.5 font-terminal text-lg uppercase leading-none tracking-wide text-on-highlight hover:bg-accent hover:text-on-accent"
           >
             {theme === "dark" ? "☀ Light" : "☾ Dark"}
           </button>
@@ -166,13 +193,19 @@ export default function App() {
         {error && (
           <div
             role="alert"
-            className="border-2 border-line bg-danger p-2.5 font-terminal text-base leading-snug text-on-danger shadow-pixel-sm"
+            className="panel-in border-2 border-line bg-danger p-2.5 font-terminal text-base leading-snug text-on-danger shadow-pixel-sm"
           >
             {error}
           </div>
         )}
 
-        <ProgressLog events={progress} />
+        {isLoading && <LoadingBar label="Generating" />}
+
+        <ProgressLog
+          events={progress}
+          isDismissing={isDismissingProgress}
+          isRunning={isLoading}
+        />
 
         {selectedNode && mindmap && (
           <SummaryPanel
@@ -211,6 +244,11 @@ export default function App() {
                 ? "Watch the progress log on the left while the outline is extracted."
                 : "Paste text into the terminal on the left, or load a sample, to run the visualiser."}
             </p>
+            {isLoading && (
+              <div className="mt-5 w-64">
+                <LoadingBar />
+              </div>
+            )}
           </div>
         ) : (
           <>

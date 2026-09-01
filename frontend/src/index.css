@@ -187,6 +187,102 @@ body {
   outline-offset: 2px;
 }
 
+/* ------------------------------------------------------------------ *
+ * Motion
+ *
+ * One global colour transition means every theme swap - and every hover,
+ * selection and state change - eases instead of snapping. Transform is
+ * deliberately excluded: React Flow drives node positions through it, and
+ * animating that would fight dragging.
+ * ------------------------------------------------------------------ */
+
+*,
+*::before,
+*::after {
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease,
+    color 0.25s ease,
+    fill 0.25s ease,
+    stroke 0.25s ease,
+    opacity 0.25s ease;
+}
+
+/* Positioned layers must not ease, or dragging and panning smear. */
+.react-flow__node,
+.react-flow__viewport,
+.react-flow__pane {
+  transition: none;
+}
+
+@keyframes pixel-sweep {
+  0% {
+    transform: translateX(-110%);
+  }
+  100% {
+    transform: translateX(410%);
+  }
+}
+
+@keyframes pixel-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0.2;
+  }
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pixel-sweep {
+  animation: pixel-sweep 1.1s linear infinite;
+}
+
+.pixel-blink {
+  animation: pixel-blink 1s steps(1, end) infinite;
+}
+
+/* Panels that appear mid-flow slide in rather than pop. */
+.panel-in {
+  animation: panel-in 0.22s ease-out both;
+}
+
+/*
+ * Every button carries a fill, a hard border and an offset shadow, so none of
+ * them read as flat text on a panel.
+ */
+.pixel-chip {
+  border: 2px solid var(--line);
+  box-shadow: 2px 2px 0 var(--shadow);
+  transition:
+    transform 0.08s ease,
+    box-shadow 0.08s ease,
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.pixel-chip:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--shadow);
+}
+
+.pixel-chip:active:not(:disabled) {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 var(--shadow);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

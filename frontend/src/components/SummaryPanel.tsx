@@ -25,7 +25,7 @@ export default function SummaryPanel({
   return (
     <section
       aria-label="Node summary"
-      className="border-2 border-accent bg-inset p-3 shadow-pixel-accent"
+      className="panel-in border-2 border-accent bg-inset p-3 shadow-pixel-accent"
     >
       <header className="mb-2 flex items-start justify-between gap-2 border-b border-accent/40 pb-1">
         <h2 className="font-pixel text-[10px] uppercase leading-relaxed text-heading">
@@ -35,7 +35,7 @@ export default function SummaryPanel({
           type="button"
           onClick={onClose}
           aria-label="Close summary"
-          className="shrink-0 border-2 border-line bg-surface px-1 font-pixel text-[9px] text-ink hover:bg-danger hover:text-on-danger"
+          className="pixel-chip shrink-0 bg-danger px-1.5 font-pixel text-[9px] text-on-danger hover:bg-strong hover:text-on-strong"
         >
           X
         </button>
@@ -55,7 +55,16 @@ export default function SummaryPanel({
             disabled={isExpanding}
             className="pixel-btn w-full bg-strong px-2 py-2 font-pixel text-[9px] uppercase tracking-wider text-on-strong disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isExpanding ? ">>> DRILLING..." : "▼ DRILL DOWN"}
+            {isExpanding ? (
+              <span className="inline-flex items-center gap-2">
+                <span className="pixel-blink" aria-hidden="true">
+                  ▮
+                </span>
+                DRILLING
+              </span>
+            ) : (
+              "▼ DRILL DOWN"
+            )}
           </button>
         )}
         {!isExpanded && (
