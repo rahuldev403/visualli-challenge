@@ -2,58 +2,113 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Theming is driven entirely by these custom properties. Components never name
+ * a colour: they use the semantic Tailwind aliases in tailwind.config.js, which
+ * resolve to the variables below. Switching theme swaps one attribute on <html>
+ * and every surface, border, node and edge follows.
+ *
+ * Three states are handled: an explicit choice (data-theme), and the untouched
+ * default, which follows the OS via prefers-color-scheme.
+ */
+
 :root {
-  --bg-dark: #0f0f1b;
-  --panel-bg: #1b1c2e;
-  --neon-pink: #ff2a85;
-  --neon-cyan: #00f0ff;
-  --neon-yellow: #ffe600;
-  --neon-green: #39ff14;
+  color-scheme: dark;
+
+  --bg: #090a12;
+  --surface: #1a1b35;
+  --surface-inset: #0d0e1a;
+  --line: #000000;
+  --shadow: #000000;
+
+  --text: #e0e0ff;
+  --text-muted: #8d8ea6;
+
+  --accent: #00f0ff;
+  --accent-strong: #ff2a85;
+  --highlight: #ffe600;
+  --success: #39ff14;
+  --danger: #ff0055;
+
+  --node-bg: #2b1055;
+  --node-bg-hover: #3d1a75;
+  --node-text: #39ff14;
+
+  --edge: #00f0ff;
+  --grid: #3d1a75;
+  --scanline: rgba(0, 0, 0, 0.25);
+}
+
+/* Light: a paper-terminal reading of the same design, with accents darkened
+   far enough to stay legible on a bright ground. */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+
+    --bg: #efe6d0;
+    --surface: #fffaf0;
+    --surface-inset: #ffffff;
+    --line: #1a1a1a;
+    --shadow: #1a1a1a;
+
+    --text: #1a1a2e;
+    --text-muted: #5f5f75;
+
+    --accent: #005f87;
+    --accent-strong: #b3125e;
+    --highlight: #a86a00;
+    --success: #1b7a2f;
+    --danger: #c62828;
+
+    --node-bg: #ffe9b8;
+    --node-bg-hover: #ffd98a;
+    --node-text: #24243d;
+
+    --edge: #005f87;
+    --grid: #c9b896;
+    --scanline: rgba(0, 0, 0, 0.05);
+  }
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --bg: #efe6d0;
+  --surface: #fffaf0;
+  --surface-inset: #ffffff;
+  --line: #1a1a1a;
+  --shadow: #1a1a1a;
+
+  --text: #1a1a2e;
+  --text-muted: #5f5f75;
+
+  --accent: #005f87;
+  --accent-strong: #b3125e;
+  --highlight: #a86a00;
+  --success: #1b7a2f;
+  --danger: #c62828;
+
+  --node-bg: #ffe9b8;
+  --node-bg-hover: #ffd98a;
+  --node-text: #24243d;
+
+  --edge: #005f87;
+  --grid: #c9b896;
+  --scanline: rgba(0, 0, 0, 0.05);
 }
 
 body {
   margin: 0;
-  background-color: var(--bg-dark);
+  background-color: var(--bg);
+  color: var(--text);
   font-family: "VT323", monospace;
-  color: #e0e0ff;
   image-rendering: pixelated;
-  -webkit-user-select: none;
-  user-select: none;
 }
 
-.font-pixel {
-  font-family: "Press Start 2P", monospace;
-}
-
-.font-terminal {
-  font-family: "VT323", monospace;
-}
-
-/* Chunky 8-bit border shadow utilities */
-.pixel-box-pink {
-  border: 3px solid #000;
-  box-shadow:
-    4px 4px 0px var(--neon-pink),
-    -2px -2px 0px #000 inset;
-}
-
-.pixel-box-cyan {
-  border: 3px solid #000;
-  box-shadow:
-    4px 4px 0px var(--neon-cyan),
-    -2px -2px 0px #000 inset;
-}
-
-.pixel-box-yellow {
-  border: 3px solid #000;
-  box-shadow:
-    4px 4px 0px var(--neon-yellow),
-    -2px -2px 0px #000 inset;
-}
-
+/* Chunky offset border, the one motif the whole UI is built from. */
 .pixel-btn {
-  border: 3px solid #000;
-  box-shadow: 4px 4px 0px #000;
+  border: 3px solid var(--line);
+  box-shadow: 4px 4px 0 var(--shadow);
   transition:
     transform 0.05s ease,
     box-shadow 0.05s ease;
@@ -61,16 +116,42 @@ body {
 
 .pixel-btn:hover:not(:disabled) {
   transform: translate(-2px, -2px);
-  box-shadow: 6px 6px 0px #000;
+  box-shadow: 6px 6px 0 var(--shadow);
 }
 
 .pixel-btn:active:not(:disabled) {
   transform: translate(2px, 2px);
-  box-shadow: 2px 2px 0px #000;
+  box-shadow: 2px 2px 0 var(--shadow);
 }
 
-/* Subtle CRT Scanline overlay */
-.scanlines {
-  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+/* Subtle CRT overlay. Nearly invisible in the light theme by design. */
+.scanlines::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 30;
+  background: linear-gradient(transparent 50%, var(--scanline) 50%);
   background-size: 100% 4px;
+}
+
+/* Keyboard focus has to survive both themes. */
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* React Flow reads these for its own chrome. */
+.react-flow__attribution {
+  display: none;
 }
