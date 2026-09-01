@@ -1,6 +1,14 @@
 import type { Mindmap, MindmapSummary, ProgressEvent } from "../types";
 
-const API_BASE = import.meta.env.API_URL ?? "http://localhost:3001";
+/**
+ * Backend base URL, baked in at BUILD time (not runtime) — changing it on the
+ * host requires a rebuild.
+ *
+ * Vite only exposes prefixed env vars to the client; both VITE_ and API_ are
+ * whitelisted in vite.config.ts, so either name works.
+ */
+const env = import.meta.env as unknown as Record<string, string | undefined>;
+const API_BASE = env.VITE_API_URL ?? env.API_URL ?? "http://localhost:3001";
 
 /** An error the backend described. Carries its code so the UI can react to it. */
 export class ApiError extends Error {
