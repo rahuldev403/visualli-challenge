@@ -1,8 +1,8 @@
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import { v4 as uuidv4 } from "uuid";
-import { generateMindmap } from "./generator";
-import { Mindmap } from "../../../packages/shared/types";
+import { generateMindmap } from "./ai/generator";
+
 import "dotenv/config";
 
 const app = express();
