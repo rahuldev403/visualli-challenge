@@ -1,34 +1,39 @@
-import { GoogleGenerativeAI, Schema, Type } from "@google/generative-ai";
+import { GoogleGenerativeAI, Schema, SchemaType } from "@google/generative-ai";
 import { MindmapSchema, Mindmap } from "../shared/types";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
-// Map our needs to Gemini's JSON schema type
 const geminiJsonSchema: Schema = {
-  type: Type.OBJECT,
+  type: SchemaType.OBJECT,
   properties: {
-    title: { type: Type.STRING },
-    rootId: { type: Type.STRING },
+    title: { type: SchemaType.STRING },
+    rootId: { type: SchemaType.STRING },
     nodes: {
-      type: Type.ARRAY,
+      type: SchemaType.ARRAY,
       items: {
-        type: Type.OBJECT,
+        type: SchemaType.OBJECT,
         properties: {
-          id: { type: Type.STRING, description: "Stable identifier (e.g. n1)" },
-          label: { type: Type.STRING, description: "1-4 words" },
-          summary: { type: Type.STRING, description: "One sentence summary" },
+          id: {
+            type: SchemaType.STRING,
+            description: "Stable identifier (e.g. n1)",
+          },
+          label: { type: SchemaType.STRING, description: "1-4 words" },
+          summary: {
+            type: SchemaType.STRING,
+            description: "One sentence summary",
+          },
         },
         required: ["id", "label", "summary"],
       },
     },
     connections: {
-      type: Type.ARRAY,
+      type: SchemaType.ARRAY,
       items: {
-        type: Type.OBJECT,
+        type: SchemaType.OBJECT,
         properties: {
-          from: { type: Type.STRING, description: "Origin node ID" },
-          to: { type: Type.STRING, description: "Destination node ID" },
-          label: { type: Type.STRING, description: "Relationship label" },
+          from: { type: SchemaType.STRING, description: "Origin node ID" },
+          to: { type: SchemaType.STRING, description: "Destination node ID" },
+          label: { type: SchemaType.STRING, description: "Relationship label" },
         },
         required: ["from", "to", "label"],
       },
@@ -40,11 +45,11 @@ const geminiJsonSchema: Schema = {
 export class GeminiService {
   static async generateMindmap(text: string, retries = 1): Promise<Mindmap> {
     const model = genAI.getGenerativeModel({
-      model: "gemini-3.7-flash",
+      model: "gemini-3.6-flash",
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema: geminiJsonSchema,
-        temperature: 0.2, // Keep creativity low, we want analytical accuracy
+        temperature: 0.2,
       },
     });
 
@@ -65,7 +70,9 @@ export class GeminiService {
         );
         return this.generateMindmap(text, retries - 1);
       }
-      throw new Error("Failed to generate a logically valid mindmap from LLM.");
+      throw new Error(
+        `Failed to generate a logically valid mindmap from LLM. ->${error}`,
+      );
     }
   }
 }

@@ -17,5 +17,5 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Backend securely running on http://localhost:${PORT}`);
-  console.log(`Using Gemini API with gemini-3.7-flash`);
+  console.log(`Using Gemini API`);
 });
