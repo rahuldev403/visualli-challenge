@@ -12,13 +12,7 @@ export type MindmapRecord = StoredMindmap & { sourceText: string };
 
 const isTestEnv = () => process.env.NODE_ENV === "test";
 
-/**
- * Durable enough for this exercise: an in-memory map that write-throughs to a
- * JSON file, so mindmaps survive a restart and not just a request. Swapping in
- * MongoDB later means reimplementing this one class and nothing else.
- *
- * Persistence is skipped under NODE_ENV=test and when MINDMAP_STORE=memory.
- */
+
 class MindmapStore {
   private records = new Map<string, MindmapRecord>();
   private loaded = false;

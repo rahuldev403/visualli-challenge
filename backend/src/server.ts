@@ -1,21 +1,16 @@
 import "dotenv/config";
-import express, { NextFunction, Request, Response } from "express";
-import cors from "cors";
-import mindmapRoutes from "./routes/mindmap.routes";
+import { createApp } from "./app";
+import { isMockMode } from "./ai/provider";
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+const PORT = Number(process.env.PORT) || 3001;
 
-app.use("/api/mindmaps", mindmapRoutes);
+createApp().listen(PORT, () => {
+  const mode = isMockMode()
+    ? "MOCK_MODE (canned fixtures, no API key needed)"
+    : `Gemini (${process.env.GEMINI_MODEL || "gemini-2.5-flash"})`;
+  const strategy = process.env.GENERATION_MODE === "single" ? "single-pass" : "two-phase";
 
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  console.error("Server Error:", err.message);
-  res.status(500).json({ error: err.message || "Internal Server Error" });
-});
-
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-  console.log(`Backend securely running on http://localhost:${PORT}`);
-  console.log(`Using Gemini API`);
-});
+  console.log(`Backend listening on http://localhost:${PORT}`);
+  console.log(`Provider:   ${mode}`);
+  console.log(`Generation: ${strategy}`);
+})

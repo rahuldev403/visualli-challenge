@@ -2,16 +2,10 @@ import { GoogleGenAI } from "@google/genai";
 import { ProviderError } from "./errors";
 import type { LlmProvider, LlmRequest } from "./provider";
 
-/**
- * Overridable so the model can be swapped without a code change — model names
- * move faster than this repository will.
- */
+
 const DEFAULT_MODEL = "gemini-2.5-flash";
 
-/**
- * Gemini accepts a JSON Schema but rejects a few of the keywords Zod emits.
- * Strip those rather than hand-maintaining a second copy of the schema.
- */
+
 export function sanitiseJsonSchema(schema: unknown): unknown {
   if (Array.isArray(schema)) return schema.map(sanitiseJsonSchema);
   if (schema === null || typeof schema !== "object") return schema;
@@ -52,8 +46,6 @@ export class GeminiProvider implements LlmProvider {
         config: {
           responseMimeType: "application/json",
           responseJsonSchema: sanitiseJsonSchema(request.jsonSchema),
-          // Low but non-zero: structure matters more than flair here, and a
-          // little variation helps the corrective retry escape a bad answer.
           temperature: 0.2,
         },
       });
