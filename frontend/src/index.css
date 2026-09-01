@@ -1,3 +1,75 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --bg-dark: #0f0f1b;
+  --panel-bg: #1b1c2e;
+  --neon-pink: #ff2a85;
+  --neon-cyan: #00f0ff;
+  --neon-yellow: #ffe600;
+  --neon-green: #39ff14;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg-dark);
+  font-family: "VT323", monospace;
+  color: #e0e0ff;
+  image-rendering: pixelated;
+  user-select: none;
+}
+
+.font-pixel {
+  font-family: "Press Start 2P", monospace;
+}
+
+.font-terminal {
+  font-family: "VT323", monospace;
+}
+
+/* Chunky 8-bit border shadow utilities */
+.pixel-box-pink {
+  border: 3px solid #000;
+  box-shadow:
+    4px 4px 0px var(--neon-pink),
+    -2px -2px 0px #000 inset;
+}
+
+.pixel-box-cyan {
+  border: 3px solid #000;
+  box-shadow:
+    4px 4px 0px var(--neon-cyan),
+    -2px -2px 0px #000 inset;
+}
+
+.pixel-box-yellow {
+  border: 3px solid #000;
+  box-shadow:
+    4px 4px 0px var(--neon-yellow),
+    -2px -2px 0px #000 inset;
+}
+
+.pixel-btn {
+  border: 3px solid #000;
+  box-shadow: 4px 4px 0px #000;
+  transition:
+    transform 0.05s ease,
+    box-shadow 0.05s ease;
+}
+
+.pixel-btn:hover:not(:disabled) {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px #000;
+}
+
+.pixel-btn:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px #000;
+}
+
+/* Subtle CRT Scanline overlay */
+.scanlines {
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+  background-size: 100% 4px;
+}
