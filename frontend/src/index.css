@@ -17,6 +17,7 @@ body {
   font-family: "VT323", monospace;
   color: #e0e0ff;
   image-rendering: pixelated;
+  -webkit-user-select: none;
   user-select: none;
 }
 
