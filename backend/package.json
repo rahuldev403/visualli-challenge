@@ -1,24 +1,23 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Mindmap generation API: LLM structured output, strict validation, Express.",
+  "main": "dist/server.js",
   "scripts": {
-    "build": "tsc",
     "dev": "tsx watch src/server.ts",
-    "test": "jest"
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@google/genai": "^2.20.0",
-    "@google/generative-ai": "^0.24.1",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "openai": "^7.8.0",
-    "uuid": "^14.0.2",
     "zod": "^4.5.4"
   },
   "devDependencies": {
@@ -27,7 +26,6 @@
     "@types/jest": "^30.0.0",
     "@types/node": "^26.4.0",
     "@types/supertest": "^7.2.1",
-    "@types/uuid": "^10.0.0",
     "jest": "^30.5.0",
     "supertest": "^7.2.2",
     "ts-jest": "^29.4.12",

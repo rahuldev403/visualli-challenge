@@ -41,13 +41,15 @@ export class MindmapController {
       "X-Accel-Buffering": "no",
     });
 
+    // Watch the response, not the request: `req` emits "close" as soon as its
+    // body has been consumed, which would look like an instant disconnect.
     let clientGone = false;
-    req.on("close", () => {
-      clientGone = true;
+    res.on("close", () => {
+      if (!res.writableFinished) clientGone = true;
     });
 
     const send = (event: string, data: unknown): void => {
-      if (clientGone) return;
+      if (clientGone || res.writableEnded) return;
       res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
     };
 
@@ -68,7 +70,7 @@ export class MindmapController {
         return;
       }
     } finally {
-      if (!clientGone) res.end();
+      if (!res.writableEnded) res.end();
     }
   }
 
