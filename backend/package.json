@@ -1,5 +1,5 @@
 {
-  "name": "visualli-challenge",
+  "name": "backend",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -10,10 +10,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "openai": "^7.8.0",
+    "uuid": "^14.0.2",
     "zod": "^4.5.4"
-  },
-  "devDependencies": {
-    "@types/node": "^26.4.0",
-    "typescript": "^7.0.2"
   }
 }
