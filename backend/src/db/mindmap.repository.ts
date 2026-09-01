@@ -1,5 +1,5 @@
 import { Mindmap } from "../shared/types";
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID } from "crypto";
 
 // In-memory store
 type MindmapRecord = Mindmap & { id: string; createdAt: string };
@@ -7,7 +7,7 @@ const db = new Map<string, MindmapRecord>();
 
 export class MindmapRepository {
   static create(data: Mindmap): MindmapRecord {
-    const id = uuidv4();
+    const id = randomUUID();
     const record: MindmapRecord = {
       ...data,
       id,

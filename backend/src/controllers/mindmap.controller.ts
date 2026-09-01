@@ -29,7 +29,7 @@ export class MindmapController {
   }
 
   static async getById(req: Request, res: Response) {
-    const record = MindmapRepository.findById(req.params.id);
+    const record = MindmapRepository.findById(req.params.id as string);
     if (!record) {
       return res.status(404).json({ error: "Mindmap not found" });
     }
