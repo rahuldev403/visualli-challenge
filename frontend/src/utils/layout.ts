@@ -65,7 +65,7 @@ export function buildGraphElements(
     source: conn.from,
     target: conn.to,
     label: conn.label.toUpperCase(),
-    type: "step", 
+    type: "step",
     animated: true,
     style: { stroke: "#00f0ff", strokeWidth: 3 },
     labelStyle: {
