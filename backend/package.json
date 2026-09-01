@@ -3,9 +3,12 @@
   "version": "1.0.0",
   "description": "Mindmap generation API: LLM structured output, strict validation, Express.",
   "main": "dist/server.js",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc",
+    "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "test": "jest",
     "test:watch": "jest --watch"
