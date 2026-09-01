@@ -65,10 +65,10 @@ export default function GeneratorForm({
       <div className="flex items-center justify-between gap-2">
         <label
           htmlFor="source-text"
-          className="flex items-center gap-2 font-pixel text-[9px] text-accent"
+          className="flex shrink-0 items-center gap-2 whitespace-nowrap font-terminal text-lg uppercase leading-none tracking-wide text-accent"
         >
-          <span aria-hidden="true" className="inline-block h-2 w-2 animate-pulse bg-accent" />
-          INPUT RAW DATA
+          <span aria-hidden="true" className="inline-block h-2.5 w-2.5 bg-accent" />
+          Input raw data
         </label>
         <div className="flex gap-1">
           {SAMPLES.map((sample) => (
@@ -78,7 +78,7 @@ export default function GeneratorForm({
               onClick={() => onChange(sample.text)}
               disabled={isLoading}
               title={`Load a sample ${sample.label.toLowerCase()} input`}
-              className="border-2 border-line bg-surface px-1 py-0.5 font-pixel text-[7px] text-muted hover:bg-highlight hover:text-on-highlight disabled:opacity-50"
+              className="border-2 border-line bg-inset px-2 py-1 font-terminal text-base uppercase leading-none text-ink hover:bg-highlight hover:text-on-highlight disabled:opacity-50"
             >
               {sample.label}
             </button>
@@ -96,7 +96,7 @@ export default function GeneratorForm({
         disabled={isLoading}
       />
 
-      <div className="flex items-center justify-between font-terminal text-sm">
+      <div className="flex items-center justify-between font-terminal text-base">
         <span className={tooLong ? "text-danger" : "text-muted"}>
           {trimmedLength.toLocaleString()} / {MAX_INPUT_CHARS.toLocaleString()} chars
         </span>

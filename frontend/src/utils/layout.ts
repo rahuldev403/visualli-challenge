@@ -25,6 +25,12 @@ export interface Placement {
   depth: number;
   /** Outward bearing from the centre, used to fan this node's own children. */
   angle: number;
+  /**
+   * Which first-ring subtree this node belongs to, or -1 for the root.
+   * Drives the branch colour, so a drill-down layer stays visually attached
+   * to the branch it came from.
+   */
+  branch: number;
 }
 
 /**
@@ -68,7 +74,7 @@ export function computePlacements(mindmap: Mindmap): Map<string, Placement> {
     }
   }
 
-  placements.set(rootId, { x: 0, y: 0, depth: 0, angle: 0 });
+  placements.set(rootId, { x: 0, y: 0, depth: 0, angle: 0, branch: -1 });
 
   // Anything the root cannot reach still has to be visible, so it joins the
   // first ring rather than being silently dropped at the origin.
@@ -82,6 +88,7 @@ export function computePlacements(mindmap: Mindmap): Map<string, Placement> {
       y: Math.sin(angle) * RING_RADIUS,
       depth: 1,
       angle,
+      branch: index,
     });
   });
 
@@ -101,10 +108,13 @@ export function computePlacements(mindmap: Mindmap): Map<string, Placement> {
       const angle = parent.angle + offset;
 
       placements.set(id, {
+        // Children inherit their parent's branch, so an expansion keeps the
+        // colour of the subtree it belongs to.
         x: parent.x + Math.cos(angle) * radius,
         y: parent.y + Math.sin(angle) * radius,
         depth: parent.depth + 1,
         angle,
+        branch: parent.branch,
       });
       frontier.push(id);
     });
@@ -144,7 +154,7 @@ export interface GraphElements {
 /** Turns a validated mindmap into React Flow nodes and labelled edges. */
 export function buildGraphElements(mindmap: Mindmap): GraphElements {
   const placements = computePlacements(mindmap);
-  const fallback: Placement = { x: 0, y: 0, depth: 1, angle: 0 };
+  const fallback: Placement = { x: 0, y: 0, depth: 1, angle: 0, branch: 0 };
 
   const nodes: Node<MindmapNodeData>[] = mindmap.nodes.map((node) => {
     const placement = placements.get(node.id) ?? fallback;
@@ -161,6 +171,7 @@ export function buildGraphElements(mindmap: Mindmap): GraphElements {
         label: node.label,
         summary: node.summary,
         depth: placement.depth,
+        branch: placement.branch,
         isRoot: node.id === mindmap.rootId,
         isExpanded: mindmap.expandedNodeIds.includes(node.id),
       },

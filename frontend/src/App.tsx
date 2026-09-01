@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import ReactFlow, { Background, Controls, type Node } from "reactflow";
-import "reactflow/dist/style.css";
 
 import MindmapNode, { type MindmapNodeData } from "./components/MindmapNode";
 import GeneratorForm from "./components/GeneratorForm";
@@ -141,20 +140,19 @@ export default function App() {
   );
 
   return (
-    <div className="scanlines relative flex h-screen w-screen overflow-hidden bg-bg font-terminal text-ink">
+    <div className="relative flex h-screen w-screen overflow-hidden bg-bg font-terminal text-ink">
       <aside className="z-20 flex w-[380px] shrink-0 flex-col gap-3 overflow-y-auto border-r-4 border-line bg-surface p-4 shadow-pixel-lg">
-        <header className="flex items-center justify-between border-2 border-line bg-strong px-3 py-2 text-on-strong shadow-pixel-sm">
-          <h1 className="font-pixel text-[10px] font-bold tracking-widest">
+        <header className="flex items-center justify-between gap-3 border-2 border-line bg-strong px-3 py-2.5 text-on-strong shadow-pixel-sm">
+          <h1 className="font-pixel text-[13px] font-bold leading-none tracking-widest">
             MINDMAP.EXE
           </h1>
           <button
             type="button"
             onClick={toggleTheme}
             aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
-            title={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
-            className="border-2 border-line bg-line px-2 py-1 font-pixel text-[10px] text-strong hover:bg-highlight hover:text-on-highlight"
+            className="shrink-0 border-2 border-line bg-line px-2.5 py-1.5 font-terminal text-lg uppercase leading-none tracking-wide text-highlight hover:bg-highlight hover:text-on-highlight"
           >
-            {theme === "dark" ? "☀" : "☾"}
+            {theme === "dark" ? "☀ Light" : "☾ Dark"}
           </button>
         </header>
 
@@ -217,7 +215,7 @@ export default function App() {
         ) : (
           <>
             <div className="pointer-events-none absolute left-4 top-4 z-10 max-w-[60%] border-2 border-line bg-surface px-3 py-2 shadow-pixel-sm">
-              <p className="truncate font-pixel text-[10px] leading-relaxed text-highlight">
+              <p className="truncate font-pixel text-[11px] leading-relaxed text-heading">
                 {mindmap.title}
               </p>
               <p className="font-terminal text-base text-muted">

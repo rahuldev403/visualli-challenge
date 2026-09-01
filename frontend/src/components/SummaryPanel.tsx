@@ -28,7 +28,7 @@ export default function SummaryPanel({
       className="border-2 border-accent bg-inset p-3 shadow-pixel-accent"
     >
       <header className="mb-2 flex items-start justify-between gap-2 border-b border-accent/40 pb-1">
-        <h2 className="font-pixel text-[10px] uppercase leading-relaxed text-highlight">
+        <h2 className="font-pixel text-[10px] uppercase leading-relaxed text-heading">
           {node.label}
         </h2>
         <button

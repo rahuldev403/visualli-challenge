@@ -168,3 +168,32 @@ describe("handleSidesFor", () => {
     expect(handleSidesFor({ x: 0, y: 0 }, to)).toEqual({ source, target });
   });
 });
+
+describe("branch colouring", () => {
+  it("gives each first-ring subtree its own branch index", () => {
+    const placements = computePlacements(baseMindmap());
+
+    expect(placements.get("n1")!.branch).toBe(-1); // the root belongs to none
+    const branches = ["n2", "n3", "n4", "n5"].map((id) => placements.get(id)!.branch);
+    expect(new Set(branches).size).toBe(4);
+  });
+
+  it("makes a drill-down layer inherit its parent's branch", () => {
+    const expanded = baseMindmap({
+      expandedNodeIds: ["n4"],
+      nodes: [
+        ...baseMindmap().nodes,
+        { id: "n4x1", label: "Starch Storage", summary: "Stored as starch." },
+      ],
+      connections: [
+        ...baseMindmap().connections,
+        { from: "n4", to: "n4x1", label: "stored as" },
+      ],
+    });
+
+    const placements = computePlacements(expanded);
+
+    // The expansion keeps the colour of the subtree it came from.
+    expect(placements.get("n4x1")!.branch).toBe(placements.get("n4")!.branch);
+  });
+});

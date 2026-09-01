@@ -7,7 +7,7 @@ interface ProgressLogProps {
 const PHASE_STYLE: Record<string, string> = {
   repair: "text-danger",
   validated: "text-success",
-  "outline-ready": "text-highlight",
+  "outline-ready": "text-heading",
 };
 
 /**

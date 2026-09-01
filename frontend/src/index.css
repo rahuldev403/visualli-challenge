@@ -8,10 +8,11 @@
  * resolve to the variables below. Switching theme swaps one attribute on <html>
  * and every surface, border, node and edge follows.
  *
- * `--on-*` tokens carry the text colour that stays legible on top of a given
- * fill. They are what keeps the light theme readable: the same "cyan chip with
- * dark text" becomes "deep blue chip with white text" without touching a
- * component.
+ * Two families of token do the heavy lifting:
+ *   --on-*     text colour that stays legible on top of a given fill
+ *   --heading  text colour for emphasis, kept separate from --highlight
+ *              because a fill colour and a text colour cannot be the same
+ *              value once the background turns light
  */
 
 :root {
@@ -33,6 +34,7 @@
   --on-strong: #0f0f1b;
   --highlight: #ffe600;
   --on-highlight: #0f0f1b;
+  --heading: #ffe600;
   --success: #39ff14;
   --danger: #ff0055;
   --on-danger: #ffffff;
@@ -44,80 +46,112 @@
   --edge: #00f0ff;
   --edge-label: #ffe600;
   --grid: #3d1a75;
-  --scanline: rgba(0, 0, 0, 0.25);
+
+  /* Categorical branch palette. Each first-ring subtree gets one hue and its
+     drill-down children inherit it, so colour groups the tree.
+     Validated with the dataviz palette checker against this theme's canvas:
+     lightness band, chroma floor, CVD separation and contrast all pass.
+     Colour is a redundant cue here - every node is directly labelled and
+     joined by an explicit edge - so it never carries identity alone. */
+  --cat-1: #c96a24;
+  --cat-2: #2f86cc;
+  --cat-3: #17a05f;
+  --cat-4: #9670e0;
+  --cat-5: #cf4a86;
+  /* A sixth-or-later branch folds into neutral rather than cycling a hue. */
+  --cat-other: #6b7787;
+  --on-cat: #0f0f1b;
 }
 
 /*
- * Light: a paper-terminal reading of the same design. Accents are darkened far
- * enough to carry white text, and the canvas is kept a shade deeper than the
- * panels so nodes still read as objects sitting on top of it.
+ * Light theme.
+ *
+ * Nodes stay saturated objects sitting on paper rather than pale tints of it —
+ * a light fill on a light ground is what made the first attempt unreadable.
+ * The chrome is warm and bright; the graph itself carries the colour.
  */
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
     color-scheme: light;
 
-    --bg: #e4dcc7;
-    --canvas: #ded5bd;
-    --surface: #fbf8ee;
+    --bg: #f4efe1;
+    --canvas: #e8e0cc;
+    --surface: #fffcf3;
     --surface-inset: #ffffff;
-    --line: #16161f;
-    --shadow: #16161f;
+    --line: #14121f;
+    --shadow: #14121f;
 
-    --text: #16161f;
-    --text-muted: #56566e;
+    --text: #14121f;
+    --text-muted: #55506b;
 
-    --accent: #0a6c9e;
+    --accent: #0a6ea8;
     --on-accent: #ffffff;
-    --accent-strong: #bc134f;
+    --accent-strong: #d01a63;
     --on-strong: #ffffff;
-    --highlight: #f0a500;
-    --on-highlight: #16161f;
-    --success: #157f37;
-    --danger: #c62828;
+    --highlight: #f5a300;
+    --on-highlight: #1a1300;
+    --heading: #8f4600;
+    --success: #12762f;
+    --danger: #cc2222;
     --on-danger: #ffffff;
 
-    --node-bg: #ddd0f5;
-    --node-bg-hover: #c7b2ef;
-    --node-text: #2b1055;
+    --node-bg: #6d4bc4;
+    --node-bg-hover: #5a3aa8;
+    --node-text: #f6f2ff;
 
-    --edge: #0a6c9e;
-    --edge-label: #8a4b00;
-    --grid: #bdb49c;
-    --scanline: rgba(0, 0, 0, 0.04);
+    --edge: #4a3a8c;
+    --edge-label: #6b3400;
+    --grid: #c6bda1;
+
+    --cat-1: #b5560f;
+    --cat-2: #1f6fb5;
+    --cat-3: #0d8149;
+    --cat-4: #7b4bc4;
+    --cat-5: #c0246b;
+    --cat-other: #4c5766;
+    --on-cat: #ffffff;
   }
 }
 
 :root[data-theme="light"] {
   color-scheme: light;
 
-  --bg: #e4dcc7;
-  --canvas: #ded5bd;
-  --surface: #fbf8ee;
+  --bg: #f4efe1;
+  --canvas: #e8e0cc;
+  --surface: #fffcf3;
   --surface-inset: #ffffff;
-  --line: #16161f;
-  --shadow: #16161f;
+  --line: #14121f;
+  --shadow: #14121f;
 
-  --text: #16161f;
-  --text-muted: #56566e;
+  --text: #14121f;
+  --text-muted: #55506b;
 
-  --accent: #0a6c9e;
+  --accent: #0a6ea8;
   --on-accent: #ffffff;
-  --accent-strong: #bc134f;
+  --accent-strong: #d01a63;
   --on-strong: #ffffff;
-  --highlight: #f0a500;
-  --on-highlight: #16161f;
-  --success: #157f37;
-  --danger: #c62828;
+  --highlight: #f5a300;
+  --on-highlight: #1a1300;
+  --heading: #8f4600;
+  --success: #12762f;
+  --danger: #cc2222;
   --on-danger: #ffffff;
 
-  --node-bg: #ddd0f5;
-  --node-bg-hover: #c7b2ef;
-  --node-text: #2b1055;
+  --node-bg: #6d4bc4;
+  --node-bg-hover: #5a3aa8;
+  --node-text: #f6f2ff;
 
-  --edge: #0a6c9e;
-  --edge-label: #8a4b00;
-  --grid: #bdb49c;
-  --scanline: rgba(0, 0, 0, 0.04);
+  --edge: #4a3a8c;
+  --edge-label: #6b3400;
+  --grid: #c6bda1;
+
+  --cat-1: #b5560f;
+  --cat-2: #1f6fb5;
+  --cat-3: #0d8149;
+  --cat-4: #7b4bc4;
+  --cat-5: #c0246b;
+  --cat-other: #4c5766;
+  --on-cat: #ffffff;
 }
 
 body {
@@ -148,17 +182,6 @@ body {
   box-shadow: 2px 2px 0 var(--shadow);
 }
 
-/* Subtle CRT overlay. Nearly invisible in the light theme by design. */
-.scanlines::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 30;
-  background: linear-gradient(transparent 50%, var(--scanline) 50%);
-  background-size: 100% 4px;
-}
-
 :focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: 2px;
@@ -176,13 +199,15 @@ body {
 
 /* ------------------------------------------------------------------ *
  * React Flow chrome
+ *
+ * Selectors match React Flow's own two-class specificity, and its stylesheet
+ * is imported before ours in main.tsx, so these win.
  * ------------------------------------------------------------------ */
 
 .react-flow__attribution {
   display: none;
 }
 
-/* Grabbing a node should feel like grabbing something. */
 .react-flow__node {
   cursor: grab;
 }
@@ -192,14 +217,14 @@ body {
 }
 
 /* Edge labels: the terminal face at a readable size, not the pixel face at 7px. */
-.react-flow__edge-text {
+.react-flow__edge .react-flow__edge-text {
   font-family: "VT323", monospace;
-  font-size: 15px;
+  font-size: 16px;
   fill: var(--edge-label);
   letter-spacing: 0.04em;
 }
 
-.react-flow__edge-textbg {
+.react-flow__edge .react-flow__edge-textbg {
   fill: var(--surface);
   stroke: var(--line);
   stroke-width: 2px;
@@ -214,12 +239,13 @@ body {
   stroke-width: 4;
 }
 
-.react-flow__controls-button {
+.react-flow__controls .react-flow__controls-button {
   background: var(--surface);
   border-bottom: 2px solid var(--line);
-  fill: var(--accent);
+  fill: var(--text);
 }
 
-.react-flow__controls-button:hover {
+.react-flow__controls .react-flow__controls-button:hover {
   background: var(--node-bg-hover);
+  fill: var(--node-text);
 }

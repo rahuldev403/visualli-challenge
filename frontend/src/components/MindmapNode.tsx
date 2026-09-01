@@ -7,6 +7,8 @@ export interface MindmapNodeData {
   summary: string;
   /** 0 for the root, 1 for its ring, 2+ for drilled-down layers. */
   depth: number;
+  /** First-ring subtree this node belongs to; -1 for the root. */
+  branch: number;
   isRoot: boolean;
   isExpanded: boolean;
 }
@@ -25,36 +27,50 @@ const SIDES = [
   ["left", Position.Left],
 ] as const;
 
+/** How many distinct branch hues the palette defines. */
+const BRANCH_HUES = 5;
+
 /**
- * Three visual tiers: the root, the first ring, and drill-down children, which
- * are drawn a little smaller so a deeper layer reads as subordinate.
+ * The fill for a node.
  *
- * Labels use the terminal face rather than the pixel face — the pixel face is
- * unreadable below about 10px, and node labels have to be read, not admired.
+ * The root is always the highlight colour; every other node takes the hue of
+ * the branch it belongs to, so a subtree reads as one group and a drill-down
+ * layer stays attached to its parent. A sixth-or-later branch folds into a
+ * neutral rather than cycling a hue back onto an existing branch.
+ *
+ * These are inline styles rather than utility classes because the value is
+ * data-driven — one of N palette slots chosen at runtime — which is exactly
+ * the case a static class cannot express.
  */
-function tierClasses(data: MindmapNodeData, selected: boolean): string {
-  if (selected) {
-    return "bg-accent text-on-accent shadow-pixel-highlight text-xl min-w-[150px]";
-  }
-  if (data.isRoot) {
-    return "bg-highlight text-on-highlight shadow-pixel-strong text-2xl uppercase min-w-[170px]";
-  }
-  if (data.depth >= 2) {
-    return "bg-surface text-ink hover:bg-node-hover shadow-pixel-sm text-lg min-w-[130px]";
-  }
-  return "bg-node text-node-ink hover:bg-node-hover shadow-pixel text-xl min-w-[150px]";
+function fillFor(data: MindmapNodeData): string {
+  if (data.isRoot) return "var(--highlight)";
+  if (data.branch < 0 || data.branch >= BRANCH_HUES) return "var(--cat-other)";
+  return `var(--cat-${data.branch + 1})`;
 }
 
 function MindmapNode({ data, selected }: NodeProps<MindmapNodeData>) {
+  const isDeep = data.depth >= 2;
+
   return (
     <div
-      className={`relative select-none border-4 border-line px-4 py-2.5 text-center font-terminal leading-tight tracking-wide transition-colors max-w-[230px] ${tierClasses(
-        data,
-        selected,
-      )}`}
+      className={`relative select-none border-4 text-center font-terminal leading-tight tracking-wide transition-[box-shadow,transform] ${
+        isDeep ? "max-w-[210px] px-3 py-2 text-lg" : "max-w-[240px] px-4 py-2.5 text-xl"
+      } ${data.isRoot ? "min-w-[180px] uppercase" : isDeep ? "min-w-[130px]" : "min-w-[150px]"}`}
+      style={{
+        background: fillFor(data),
+        color: data.isRoot ? "var(--on-highlight)" : "var(--on-cat)",
+        borderColor: "var(--line)",
+        // Selection adds a ring instead of recolouring, so a selected node
+        // does not lose the branch colour that says where it belongs.
+        boxShadow: selected
+          ? "0 0 0 4px var(--highlight), 7px 7px 0 var(--shadow)"
+          : "5px 5px 0 var(--shadow)",
+        transform: selected ? "translate(-2px, -2px)" : undefined,
+      }}
       title={data.summary}
       data-testid={`node-${data.id}`}
       data-depth={data.depth}
+      data-branch={data.branch}
     >
       {SIDES.map(([name, position]) => (
         <Fragment key={name}>
@@ -63,14 +79,14 @@ function MindmapNode({ data, selected }: NodeProps<MindmapNodeData>) {
             type="target"
             position={position}
             isConnectable={false}
-            className="!h-1 !w-1 !border-0 !bg-transparent !opacity-0"
+            className="!pointer-events-none !h-1 !w-1 !border-0 !bg-transparent !opacity-0"
           />
           <Handle
             id={`s-${name}`}
             type="source"
             position={position}
             isConnectable={false}
-            className="!h-1 !w-1 !border-0 !bg-transparent !opacity-0"
+            className="!pointer-events-none !h-1 !w-1 !border-0 !bg-transparent !opacity-0"
           />
         </Fragment>
       ))}
@@ -79,7 +95,12 @@ function MindmapNode({ data, selected }: NodeProps<MindmapNodeData>) {
 
       {data.isExpanded && (
         <span
-          className="absolute -right-2.5 -top-2.5 border-2 border-line bg-success px-1.5 font-pixel text-[8px] text-on-highlight"
+          className="absolute -right-3 -top-3 border-2 px-1.5 font-pixel text-[9px]"
+          style={{
+            background: "var(--success)",
+            color: "var(--on-highlight)",
+            borderColor: "var(--line)",
+          }}
           aria-label="already expanded"
         >
           +

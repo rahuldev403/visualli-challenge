@@ -19,6 +19,7 @@ export default {
         strong: "var(--accent-strong)",
         "on-strong": "var(--on-strong)",
         highlight: "var(--highlight)",
+        heading: "var(--heading)",
         "on-highlight": "var(--on-highlight)",
         success: "var(--success)",
         danger: "var(--danger)",
