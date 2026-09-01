@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildGraphElements, computePlacements } from "./layout";
+import { buildGraphElements, computePlacements, handleSidesFor } from "./layout";
 import type { Mindmap } from "../types";
 
 const distance = (a: { x: number; y: number }, b: { x: number; y: number }) =>
@@ -110,21 +110,25 @@ describe("computePlacements", () => {
 
 describe("buildGraphElements", () => {
   it("produces one React Flow node per mindmap node and marks the root", () => {
-    const { nodes } = buildGraphElements(baseMindmap(), null);
+    const { nodes } = buildGraphElements(baseMindmap());
 
     expect(nodes).toHaveLength(5);
     expect(nodes.find((n) => n.id === "n1")!.data.isRoot).toBe(true);
     expect(nodes.find((n) => n.id === "n2")!.data.isRoot).toBe(false);
   });
 
-  it("marks only the selected node as selected", () => {
-    const { nodes } = buildGraphElements(baseMindmap(), "n3");
+  it("routes each edge through the handles that face each other", () => {
+    const { edges } = buildGraphElements(baseMindmap());
 
-    expect(nodes.filter((n) => n.data.isSelected).map((n) => n.id)).toEqual(["n3"]);
+    // Every edge must name a real handle pair, or React Flow silently drops it.
+    for (const edge of edges) {
+      expect(edge.sourceHandle).toMatch(/^s-(top|right|bottom|left)$/);
+      expect(edge.targetHandle).toMatch(/^t-(top|right|bottom|left)$/);
+    }
   });
 
   it("renders one labelled edge per connection", () => {
-    const { edges } = buildGraphElements(baseMindmap(), null);
+    const { edges } = buildGraphElements(baseMindmap());
 
     expect(edges).toHaveLength(4);
     expect(edges.map((e) => e.label)).toContain("HARNESSES");
@@ -141,15 +145,26 @@ describe("buildGraphElements", () => {
       ],
     });
 
-    const { edges } = buildGraphElements(duplicated, null);
+    const { edges } = buildGraphElements(duplicated);
 
     expect(new Set(edges.map((e) => e.id)).size).toBe(2);
   });
 
   it("flags nodes that have already been expanded", () => {
-    const { nodes } = buildGraphElements(baseMindmap({ expandedNodeIds: ["n4"] }), null);
+    const { nodes } = buildGraphElements(baseMindmap({ expandedNodeIds: ["n4"] }));
 
     expect(nodes.find((n) => n.id === "n4")!.data.isExpanded).toBe(true);
     expect(nodes.find((n) => n.id === "n2")!.data.isExpanded).toBe(false);
+  });
+});
+
+describe("handleSidesFor", () => {
+  it.each([
+    ["to the right", { x: 200, y: 0 }, "right", "left"],
+    ["to the left", { x: -200, y: 0 }, "left", "right"],
+    ["below", { x: 0, y: 200 }, "bottom", "top"],
+    ["above", { x: 0, y: -200 }, "top", "bottom"],
+  ])("connects through the facing sides when the target is %s", (_name, to, source, target) => {
+    expect(handleSidesFor({ x: 0, y: 0 }, to)).toEqual({ source, target });
   });
 });

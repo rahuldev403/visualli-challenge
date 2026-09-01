@@ -78,7 +78,7 @@ export default function GeneratorForm({
               onClick={() => onChange(sample.text)}
               disabled={isLoading}
               title={`Load a sample ${sample.label.toLowerCase()} input`}
-              className="border-2 border-line bg-surface px-1 py-0.5 font-pixel text-[6px] text-muted hover:bg-highlight hover:text-line disabled:opacity-50"
+              className="border-2 border-line bg-surface px-1 py-0.5 font-pixel text-[7px] text-muted hover:bg-highlight hover:text-on-highlight disabled:opacity-50"
             >
               {sample.label}
             </button>
@@ -109,7 +109,7 @@ export default function GeneratorForm({
       <button
         type="submit"
         disabled={isLoading || tooShort || tooLong}
-        className="pixel-btn w-full bg-highlight py-2 font-pixel text-xs font-bold uppercase tracking-wider text-line disabled:cursor-not-allowed disabled:bg-muted disabled:text-surface"
+        className="pixel-btn w-full bg-highlight py-2.5 font-pixel text-xs font-bold uppercase tracking-wider text-on-highlight disabled:cursor-not-allowed disabled:bg-muted disabled:text-surface"
       >
         {isLoading ? ">>> PROCESSING..." : "► COMPILE MAP"}
       </button>

@@ -28,24 +28,24 @@ export default function SummaryPanel({
       className="border-2 border-accent bg-inset p-3 shadow-pixel-accent"
     >
       <header className="mb-2 flex items-start justify-between gap-2 border-b border-accent/40 pb-1">
-        <h2 className="font-pixel text-[9px] uppercase leading-relaxed text-highlight">
+        <h2 className="font-pixel text-[10px] uppercase leading-relaxed text-highlight">
           {node.label}
         </h2>
         <button
           type="button"
           onClick={onClose}
           aria-label="Close summary"
-          className="shrink-0 border-2 border-line bg-surface px-1 font-pixel text-[8px] text-ink hover:bg-danger hover:text-line"
+          className="shrink-0 border-2 border-line bg-surface px-1 font-pixel text-[9px] text-ink hover:bg-danger hover:text-on-danger"
         >
           X
         </button>
       </header>
 
-      <p className="font-terminal text-lg leading-tight text-ink">{node.summary}</p>
+      <p className="font-terminal text-xl leading-snug text-ink">{node.summary}</p>
 
       <div className="mt-3">
         {isExpanded ? (
-          <p className="font-pixel text-[7px] leading-relaxed text-success">
+          <p className="font-terminal text-base leading-snug text-success">
             ✓ EXPANDED — CHILDREN ON CANVAS
           </p>
         ) : (
@@ -53,13 +53,13 @@ export default function SummaryPanel({
             type="button"
             onClick={() => onExpand(node.id)}
             disabled={isExpanding}
-            className="pixel-btn w-full bg-strong px-2 py-1.5 font-pixel text-[8px] uppercase tracking-wider text-line disabled:cursor-not-allowed disabled:opacity-60"
+            className="pixel-btn w-full bg-strong px-2 py-2 font-pixel text-[9px] uppercase tracking-wider text-on-strong disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isExpanding ? ">>> DRILLING..." : "▼ DRILL DOWN"}
           </button>
         )}
         {!isExpanded && (
-          <p className="mt-1.5 font-terminal text-sm leading-tight text-muted">
+          <p className="mt-2 font-terminal text-base leading-snug text-muted">
             {isRoot
               ? "Generates a deeper layer beneath the root."
               : `Generates 2-4 child ideas beneath "${node.label}".`}

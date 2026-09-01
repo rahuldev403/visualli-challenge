@@ -15,14 +15,14 @@ import type { Mindmap } from "./types";
  */
 vi.mock("reactflow", () => ({
   default: ({
-    nodes,
+    defaultNodes,
     onNodeClick,
   }: {
-    nodes: Node<MindmapNodeData>[];
+    defaultNodes: Node<MindmapNodeData>[];
     onNodeClick: (event: React.MouseEvent, node: Node<MindmapNodeData>) => void;
   }) => (
     <div data-testid="graph">
-      {nodes.map((node) => (
+      {defaultNodes.map((node) => (
         <button
           key={node.id}
           data-testid={`graph-node-${node.id}`}
@@ -36,7 +36,8 @@ vi.mock("reactflow", () => ({
   Background: () => null,
   Controls: () => null,
   Handle: () => null,
-  Position: { Top: "top", Bottom: "bottom" },
+  Position: { Top: "top", Right: "right", Bottom: "bottom", Left: "left" },
+  MarkerType: { ArrowClosed: "arrowclosed" },
 }));
 
 vi.mock("./api/client", async () => {

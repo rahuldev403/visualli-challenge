@@ -40,12 +40,17 @@ export default function App() {
   );
 
   const { nodes, edges } = useMemo(
-    () =>
-      mindmap
-        ? buildGraphElements(mindmap, selectedNodeId)
-        : { nodes: [], edges: [] },
-    [mindmap, selectedNodeId],
+    () => (mindmap ? buildGraphElements(mindmap) : { nodes: [], edges: [] }),
+    [mindmap],
   );
+
+  /**
+   * React Flow owns node positions once mounted, which is what makes nodes
+   * draggable. Remounting on this key is how a new map — or a drill-down that
+   * adds nodes — gets a fresh layout; selection alone must not change it, or
+   * every click would throw away the user's dragging.
+   */
+  const graphKey = mindmap ? `${mindmap.id}:${mindmap.nodes.length}` : "empty";
 
   /** Refreshes the sidebar list after a generate. */
   const refreshHistory = useCallback(async () => {
@@ -138,7 +143,7 @@ export default function App() {
   return (
     <div className="scanlines relative flex h-screen w-screen overflow-hidden bg-bg font-terminal text-ink">
       <aside className="z-20 flex w-[380px] shrink-0 flex-col gap-3 overflow-y-auto border-r-4 border-line bg-surface p-4 shadow-pixel-lg">
-        <header className="flex items-center justify-between border-2 border-line bg-strong px-3 py-1.5 text-line shadow-pixel-sm">
+        <header className="flex items-center justify-between border-2 border-line bg-strong px-3 py-2 text-on-strong shadow-pixel-sm">
           <h1 className="font-pixel text-[10px] font-bold tracking-widest">
             MINDMAP.EXE
           </h1>
@@ -147,7 +152,7 @@ export default function App() {
             onClick={toggleTheme}
             aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
             title={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
-            className="border-2 border-line bg-line px-1.5 py-0.5 font-pixel text-[9px] text-strong hover:bg-highlight hover:text-line"
+            className="border-2 border-line bg-line px-2 py-1 font-pixel text-[10px] text-strong hover:bg-highlight hover:text-on-highlight"
           >
             {theme === "dark" ? "☀" : "☾"}
           </button>
@@ -163,7 +168,7 @@ export default function App() {
         {error && (
           <div
             role="alert"
-            className="border-2 border-line bg-danger p-2 font-pixel text-[8px] leading-relaxed text-white shadow-pixel-sm"
+            className="border-2 border-line bg-danger p-2.5 font-terminal text-base leading-snug text-on-danger shadow-pixel-sm"
           >
             {error}
           </div>
@@ -191,16 +196,16 @@ export default function App() {
         </div>
       </aside>
 
-      <main className="relative h-full flex-1 bg-bg">
+      <main className="relative h-full flex-1 bg-canvas">
         {!mindmap ? (
           <div className="flex h-full flex-col items-center justify-center px-6 text-center">
             <div
               aria-hidden="true"
-              className="mb-4 animate-bounce font-pixel text-5xl text-strong"
+              className="mb-5 animate-bounce text-6xl"
             >
               👾
             </div>
-            <p className="font-pixel text-xs uppercase tracking-widest text-accent">
+            <p className="font-pixel text-[11px] uppercase leading-relaxed tracking-widest text-accent">
               {isLoading ? "Compiling..." : "No map compiled yet"}
             </p>
             <p className="mt-2 max-w-md font-terminal text-lg text-muted">
@@ -211,24 +216,27 @@ export default function App() {
           </div>
         ) : (
           <>
-            <div className="pointer-events-none absolute left-4 top-4 z-10 max-w-[60%] border-2 border-line bg-surface px-3 py-1.5 shadow-pixel-sm">
-              <p className="truncate font-pixel text-[9px] text-highlight">
+            <div className="pointer-events-none absolute left-4 top-4 z-10 max-w-[60%] border-2 border-line bg-surface px-3 py-2 shadow-pixel-sm">
+              <p className="truncate font-pixel text-[10px] leading-relaxed text-highlight">
                 {mindmap.title}
               </p>
-              <p className="font-terminal text-sm text-muted">
-                {mindmap.nodes.length} nodes · {mindmap.connections.length}{" "}
-                connections · click a node for its summary
+              <p className="font-terminal text-base text-muted">
+                {mindmap.nodes.length} nodes · {mindmap.connections.length} connections · click a
+                node to read it, drag to rearrange
               </p>
             </div>
 
             <ReactFlow
-              nodes={nodes}
-              edges={edges}
+              key={graphKey}
+              defaultNodes={nodes}
+              defaultEdges={edges}
               onNodeClick={handleNodeClick}
               onPaneClick={() => setSelectedNodeId(null)}
               nodeTypes={nodeTypes}
+              nodesDraggable
+              nodesConnectable={false}
               fitView
-              fitViewOptions={{ padding: 0.2 }}
+              fitViewOptions={{ padding: 0.25 }}
               minZoom={0.2}
               proOptions={{ hideAttribution: true }}
             >

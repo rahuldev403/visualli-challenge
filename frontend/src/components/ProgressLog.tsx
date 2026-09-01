@@ -30,7 +30,7 @@ export default function ProgressLog({ events }: ProgressLogProps) {
           return (
             <li
               key={`${event.phase}-${index}`}
-              className={`font-pixel text-[7px] leading-relaxed ${
+              className={`font-terminal text-base leading-snug ${
                 PHASE_STYLE[event.phase] ?? (isLast ? "text-accent" : "text-muted")
               }`}
             >
@@ -39,7 +39,7 @@ export default function ProgressLog({ events }: ProgressLogProps) {
               {event.issues && (
                 <ul className="mt-1 space-y-0.5 pl-3">
                   {event.issues.map((issue) => (
-                    <li key={issue} className="font-terminal text-sm text-muted">
+                    <li key={issue} className="font-terminal text-sm leading-snug text-muted">
                       - {issue}
                     </li>
                   ))}

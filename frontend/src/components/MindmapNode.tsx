@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { Fragment, memo } from "react";
 import { Handle, Position, type NodeProps } from "reactflow";
 
 export interface MindmapNodeData {
@@ -8,63 +8,83 @@ export interface MindmapNodeData {
   /** 0 for the root, 1 for its ring, 2+ for drilled-down layers. */
   depth: number;
   isRoot: boolean;
-  isSelected: boolean;
   isExpanded: boolean;
 }
 
 /**
- * Three visual tiers: the root, the first ring, and drill-down children, which
- * are drawn smaller so a deeper layer reads as subordinate to its parent.
+ * Handles on every side, all invisible.
+ *
+ * Edges pick whichever pair faces the other node (see `handleSidesFor` in
+ * utils/layout), which is what stops connections in a radial layout from
+ * looping around the outside of a box to reach a fixed top/bottom anchor.
  */
-function tierClasses({ isRoot, isSelected, depth }: MindmapNodeData): string {
-  if (isRoot) {
-    return "bg-highlight text-line shadow-pixel-strong font-pixel text-[10px] uppercase min-w-[150px]";
+const SIDES = [
+  ["top", Position.Top],
+  ["right", Position.Right],
+  ["bottom", Position.Bottom],
+  ["left", Position.Left],
+] as const;
+
+/**
+ * Three visual tiers: the root, the first ring, and drill-down children, which
+ * are drawn a little smaller so a deeper layer reads as subordinate.
+ *
+ * Labels use the terminal face rather than the pixel face — the pixel face is
+ * unreadable below about 10px, and node labels have to be read, not admired.
+ */
+function tierClasses(data: MindmapNodeData, selected: boolean): string {
+  if (selected) {
+    return "bg-accent text-on-accent shadow-pixel-highlight text-xl min-w-[150px]";
   }
-  if (isSelected) {
-    return "bg-accent text-line shadow-pixel-highlight font-pixel text-[9px] min-w-[130px]";
+  if (data.isRoot) {
+    return "bg-highlight text-on-highlight shadow-pixel-strong text-2xl uppercase min-w-[170px]";
   }
-  if (depth >= 2) {
-    return "bg-surface text-accent hover:bg-node-hover shadow-pixel-sm font-pixel text-[7px] min-w-[100px] opacity-95";
+  if (data.depth >= 2) {
+    return "bg-surface text-ink hover:bg-node-hover shadow-pixel-sm text-lg min-w-[130px]";
   }
-  return "bg-node text-node-ink hover:bg-node-hover shadow-pixel font-pixel text-[8px] min-w-[120px]";
+  return "bg-node text-node-ink hover:bg-node-hover shadow-pixel text-xl min-w-[150px]";
 }
 
-function MindmapNode({ data }: NodeProps<MindmapNodeData>) {
-  const { label, isExpanded, depth, summary } = data;
-
+function MindmapNode({ data, selected }: NodeProps<MindmapNodeData>) {
   return (
     <div
-      className={`relative cursor-pointer border-4 border-line px-3 py-2 text-center transition-colors max-w-[190px] ${tierClasses(
+      className={`relative select-none border-4 border-line px-4 py-2.5 text-center font-terminal leading-tight tracking-wide transition-colors max-w-[230px] ${tierClasses(
         data,
+        selected,
       )}`}
-      title={summary}
+      title={data.summary}
       data-testid={`node-${data.id}`}
-      data-depth={depth}
+      data-depth={data.depth}
     >
-      <Handle
-        type="target"
-        position={Position.Top}
-        className="!h-3 !w-3 !rounded-none !border-2 !border-line !bg-accent"
-      />
+      {SIDES.map(([name, position]) => (
+        <Fragment key={name}>
+          <Handle
+            id={`t-${name}`}
+            type="target"
+            position={position}
+            isConnectable={false}
+            className="!h-1 !w-1 !border-0 !bg-transparent !opacity-0"
+          />
+          <Handle
+            id={`s-${name}`}
+            type="source"
+            position={position}
+            isConnectable={false}
+            className="!h-1 !w-1 !border-0 !bg-transparent !opacity-0"
+          />
+        </Fragment>
+      ))}
 
-      <div className="break-words leading-snug tracking-tight">{label}</div>
+      <span className="block break-words">{data.label}</span>
 
-      {/* A small marker rather than a button: expansion is driven from the
-          summary panel, where there is room to explain what it does. */}
-      {isExpanded && (
+      {data.isExpanded && (
         <span
-          className="absolute -right-2 -top-2 border-2 border-line bg-success px-1 font-pixel text-[7px] text-line"
+          className="absolute -right-2.5 -top-2.5 border-2 border-line bg-success px-1.5 font-pixel text-[8px] text-on-highlight"
           aria-label="already expanded"
         >
           +
         </span>
       )}
-
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        className="!h-3 !w-3 !rounded-none !border-2 !border-line !bg-strong"
-      />
     </div>
   );
 }
