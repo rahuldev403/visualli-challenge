@@ -3,7 +3,7 @@ import { ProviderError } from "./errors";
 import type { LlmProvider, LlmRequest } from "./provider";
 
 
-const DEFAULT_MODEL = "gemini-2.5-flash";
+const DEFAULT_MODEL = "gemini-3.6-flash";
 
 
 export function sanitiseJsonSchema(schema: unknown): unknown {

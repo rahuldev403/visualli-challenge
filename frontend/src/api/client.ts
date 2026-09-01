@@ -4,12 +4,12 @@ const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 
 /** An error the backend described. Carries its code so the UI can react to it. */
 export class ApiError extends Error {
-  constructor(
-    message: string,
-    readonly code: string = "UNKNOWN",
-  ) {
+  readonly code: string;
+
+  constructor(message: string, code = "UNKNOWN") {
     super(message);
     this.name = "ApiError";
+    this.code = code;
   }
 }
 

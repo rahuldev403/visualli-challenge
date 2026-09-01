@@ -72,6 +72,22 @@ export class MockProvider implements LlmProvider {
    * self-loop. Exactly the class of mistake real models make.
    */
   private deliberatelyBrokenPayload(request: LlmRequest) {
+    if (request.task === "detail") {
+      // Shaped correctly, but references an id phase 1 never produced and
+      // points one connection at its own node.
+      const ids = request.context?.outline?.nodes.map((n) => n.id) ?? ["n1"];
+      return {
+        summaries: [
+          ...ids.map((id) => ({ id, summary: "A plausible-looking summary." })),
+          { id: "hallucinated", summary: "A node the outline never defined." },
+        ],
+        connections: [
+          { from: ids[0] as string, to: "hallucinated", label: "invented" },
+          { from: ids[0] as string, to: ids[0] as string, label: "self loop" },
+        ],
+      };
+    }
+
     if (request.task === "expansion") {
       const parentId = request.context?.parent?.id ?? "n1";
       return {

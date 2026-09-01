@@ -1,192 +1,241 @@
-import React, { useState, useMemo, useCallback } from "react";
-import ReactFlow, {
-  Background,
-  Controls,
-  useNodesState,
-  useEdgesState,
-  type Node,
-} from "reactflow";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import ReactFlow, { Background, Controls, type Node } from "reactflow";
 import "reactflow/dist/style.css";
 
-import MindmapNodeComponent, {
-  type CustomNodeData,
-} from "./components/MindmapNodeComponent";
-import { buildGraphElements, type MindmapPayload } from "./utils/layout";
+import MindmapNode, { type MindmapNodeData } from "./components/MindmapNode";
+import GeneratorForm from "./components/GeneratorForm";
+import ProgressLog from "./components/ProgressLog";
+import SummaryPanel from "./components/SummaryPanel";
+import HistoryList from "./components/HistoryList";
+import { buildGraphElements } from "./utils/layout";
+import { useTheme } from "./hooks/useTheme";
+import {
+  ApiError,
+  expandMindmapNode,
+  getMindmap,
+  listMindmaps,
+  streamMindmap,
+} from "./api/client";
+import type { Mindmap, MindmapSummary, ProgressEvent } from "./types";
 
-const nodeTypes = { mindmapNode: MindmapNodeComponent };
+const nodeTypes = { mindmapNode: MindmapNode };
 
 export default function App() {
+  const { theme, toggleTheme } = useTheme();
+
   const [inputText, setInputText] = useState("");
+  const [mindmap, setMindmap] = useState<Mindmap | null>(null);
+  const [history, setHistory] = useState<MindmapSummary[]>([]);
+
   const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [activeMindmap, setActiveMindmap] = useState<MindmapPayload | null>(
-    null,
+  const [expandingNodeId, setExpandingNodeId] = useState<string | null>(null);
+  const [progress, setProgress] = useState<ProgressEvent[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+
+  const selectedNode = useMemo(
+    () => mindmap?.nodes.find((node) => node.id === selectedNodeId) ?? null,
+    [mindmap, selectedNodeId],
   );
-  const [selectedNode, setSelectedNode] = useState<{
-    label: string;
-    summary: string;
-  } | null>(null);
 
-  const selectedNodeId = selectedNode
-    ? (activeMindmap?.nodes.find((n) => n.label === selectedNode.label)?.id ??
-      null)
-    : null;
+  const { nodes, edges } = useMemo(
+    () =>
+      mindmap
+        ? buildGraphElements(mindmap, selectedNodeId)
+        : { nodes: [], edges: [] },
+    [mindmap, selectedNodeId],
+  );
 
-  const { nodes: initialNodes, edges: initialEdges } = useMemo(() => {
-    if (!activeMindmap) return { nodes: [], edges: [] };
-    return buildGraphElements(activeMindmap, selectedNodeId);
-  }, [activeMindmap, selectedNodeId]);
-
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-
-  React.useEffect(() => {
-    if (activeMindmap) {
-      const { nodes: updatedNodes, edges: updatedEdges } = buildGraphElements(
-        activeMindmap,
-        selectedNodeId,
-      );
-      setNodes(updatedNodes);
-      setEdges(updatedEdges);
-    }
-  }, [activeMindmap, selectedNodeId, setNodes, setEdges]);
-
-  const handleGenerate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (inputText.trim().length < 20) {
-      setErrorMessage("ERR: INPUT MUST BE >= 20 CHARS");
-      return;
-    }
-
-    setIsLoading(true);
-    setErrorMessage(null);
-    setSelectedNode(null);
-
+  /** Refreshes the sidebar list after a generate. */
+  const refreshHistory = useCallback(async () => {
     try {
-      const response = await fetch("http://localhost:3001/api/mindmaps", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: inputText }),
+      setHistory(await listMindmaps());
+    } catch {
+      // A failed history fetch must not bury the main flow; the list just
+      // stays as it was.
+    }
+  }, []);
+
+  // Initial load. State is set from the promise callback rather than the effect
+  // body, and the cancelled flag stops a slow response landing after unmount.
+  useEffect(() => {
+    let cancelled = false;
+
+    listMindmaps()
+      .then((items) => {
+        if (!cancelled) setHistory(items);
+      })
+      .catch(() => {
+        // An unreachable backend simply leaves the history empty.
       });
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "EXECUTION FAILED");
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-      setActiveMindmap(data);
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setErrorMessage(err.message || "NET ERROR");
-      } else {
-        setErrorMessage("NET ERROR");
-      }
+  const describeError = (caught: unknown) =>
+    caught instanceof ApiError
+      ? caught.message
+      : caught instanceof Error
+        ? caught.message
+        : "Something went wrong.";
+
+  const handleGenerate = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    setProgress([]);
+    setSelectedNodeId(null);
+
+    try {
+      const result = await streamMindmap(inputText, {
+        onProgress: (event) => setProgress((events) => [...events, event]),
+      });
+      setMindmap(result);
+      await refreshHistory();
+    } catch (caught) {
+      setError(describeError(caught));
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [inputText, refreshHistory]);
 
-  const onNodeClick = useCallback(
-    (_: React.MouseEvent, node: Node<CustomNodeData>) => {
-      setSelectedNode({
-        label: node.data.label,
-        summary: node.data.summary,
-      });
+  const handleSelectFromHistory = useCallback(async (id: string) => {
+    setError(null);
+    setProgress([]);
+    setSelectedNodeId(null);
+    try {
+      setMindmap(await getMindmap(id));
+    } catch (caught) {
+      setError(describeError(caught));
+    }
+  }, []);
+
+  const handleExpand = useCallback(
+    async (nodeId: string) => {
+      if (!mindmap) return;
+      setExpandingNodeId(nodeId);
+      setError(null);
+
+      try {
+        setMindmap(await expandMindmapNode(mindmap.id, nodeId));
+      } catch (caught) {
+        setError(describeError(caught));
+      } finally {
+        setExpandingNodeId(null);
+      }
     },
+    [mindmap],
+  );
+
+  const handleNodeClick = useCallback(
+    (_event: React.MouseEvent, node: Node<MindmapNodeData>) =>
+      setSelectedNodeId(node.id),
     [],
   );
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#0f0f1b] font-terminal text-[#e0e0ff] relative scanlines">
-      {/* Sidebar / Retro Terminal Container */}
-      <aside className="w-[380px] bg-[#1a1b35] border-r-4 border-black p-5 flex flex-col justify-between z-20 shadow-[6px_0px_0px_#000]">
-        <div className="flex flex-col gap-4">
-          {/* Retro Window Header */}
-          <div className="bg-[#ff2a85] text-black px-3 py-1.5 border-2 border-black flex justify-between items-center shadow-[3px_3px_0px_#000]">
-            <span className="font-pixel text-[10px] tracking-widest font-bold">
-              MINDMAP.EXE
-            </span>
-            <div className="flex gap-1 text-[9px] font-pixel font-bold">
-              <span className="bg-black text-[#ff2a85] px-1">[?]</span>
-              <span className="bg-black text-[#ff2a85] px-1">[X]</span>
-            </div>
-          </div>
+    <div className="scanlines relative flex h-screen w-screen overflow-hidden bg-bg font-terminal text-ink">
+      <aside className="z-20 flex w-[380px] shrink-0 flex-col gap-3 overflow-y-auto border-r-4 border-line bg-surface p-4 shadow-pixel-lg">
+        <header className="flex items-center justify-between border-2 border-line bg-strong px-3 py-1.5 text-line shadow-pixel-sm">
+          <h1 className="font-pixel text-[10px] font-bold tracking-widest">
+            MINDMAP.EXE
+          </h1>
+          <button
+            type="button"
+            onClick={toggleTheme}
+            aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
+            title={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
+            className="border-2 border-line bg-line px-1.5 py-0.5 font-pixel text-[9px] text-strong hover:bg-highlight hover:text-line"
+          >
+            {theme === "dark" ? "☀" : "☾"}
+          </button>
+        </header>
 
-          <form onSubmit={handleGenerate} className="flex flex-col gap-3">
-            <label className="text-sm font-pixel text-[#00f0ff] flex items-center gap-2">
-              <span className="inline-block w-2 h-2 bg-[#00f0ff] animate-pulse" />
-              INPUT RAW DATA:
-            </label>
-            <textarea
-              rows={6}
-              className="w-full text-base p-3 bg-[#0d0e1a] text-[#39ff14] border-2 border-black focus:outline-none focus:border-[#00f0ff] resize-none font-terminal leading-relaxed"
-              placeholder="PASTE PROSE / DATA HERE..."
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              disabled={isLoading}
-            />
+        <GeneratorForm
+          value={inputText}
+          onChange={setInputText}
+          onSubmit={handleGenerate}
+          isLoading={isLoading}
+        />
 
-            <button
-              type="submit"
-              disabled={isLoading || inputText.trim().length < 20}
-              className="pixel-btn w-full py-2 bg-[#ffe600] disabled:bg-[#4a4b63] disabled:text-[#8d8ea6] text-black font-pixel text-xs font-bold uppercase tracking-wider"
-            >
-              {isLoading ? ">>> PROCESSING..." : "► COMPILE MAP"}
-            </button>
-          </form>
-
-          {errorMessage && (
-            <div className="p-2 text-xs font-pixel bg-[#ff0055] text-white border-2 border-black shadow-[3px_3px_0px_#000]">
-              {errorMessage}
-            </div>
-          )}
-
-          {/* Node Summary Terminal Window */}
-          {selectedNode && (
-            <div className="p-3 bg-[#0a0a14] border-2 border-[#00f0ff] shadow-[4px_4px_0px_#00f0ff] mt-2">
-              <div className="text-[9px] font-pixel text-[#ffe600] uppercase mb-1 border-b border-[#00f0ff]/40 pb-1">
-                NODE_INFO: {selectedNode.label}
-              </div>
-              <p className="text-base text-[#e0e0ff] leading-tight font-terminal">
-                {selectedNode.summary}
-              </p>
-            </div>
-          )}
-        </div>
-
-        {activeMindmap && (
-          <div className="text-sm text-[#00f0ff] border-t-2 border-black pt-2 font-pixel text-[9px] truncate">
-            MAP: <span className="text-[#ffe600]">{activeMindmap.title}</span>
+        {error && (
+          <div
+            role="alert"
+            className="border-2 border-line bg-danger p-2 font-pixel text-[8px] leading-relaxed text-white shadow-pixel-sm"
+          >
+            {error}
           </div>
         )}
+
+        <ProgressLog events={progress} />
+
+        {selectedNode && mindmap && (
+          <SummaryPanel
+            node={selectedNode}
+            isRoot={selectedNode.id === mindmap.rootId}
+            isExpanded={mindmap.expandedNodeIds.includes(selectedNode.id)}
+            isExpanding={expandingNodeId === selectedNode.id}
+            onExpand={handleExpand}
+            onClose={() => setSelectedNodeId(null)}
+          />
+        )}
+
+        <div className="mt-auto min-h-0 pt-2">
+          <HistoryList
+            items={history}
+            activeId={mindmap?.id ?? null}
+            onSelect={handleSelectFromHistory}
+          />
+        </div>
       </aside>
 
-      {/* Main Canvas Area */}
-      <main className="flex-1 relative h-full bg-[#090a12]">
-        {!activeMindmap ? (
-          <div className="h-full flex flex-col items-center justify-center text-[#595a75] text-center">
-            <div className="text-5xl font-pixel mb-4 text-[#ff2a85] animate-bounce">
+      <main className="relative h-full flex-1 bg-bg">
+        {!mindmap ? (
+          <div className="flex h-full flex-col items-center justify-center px-6 text-center">
+            <div
+              aria-hidden="true"
+              className="mb-4 animate-bounce font-pixel text-5xl text-strong"
+            >
               👾
             </div>
-            <p className="font-pixel text-xs text-[#00f0ff] tracking-widest uppercase">
-              NO MAP COMPILED YET
+            <p className="font-pixel text-xs uppercase tracking-widest text-accent">
+              {isLoading ? "Compiling..." : "No map compiled yet"}
             </p>
-            <p className="font-terminal text-lg text-[#8d8ea6] mt-1">
-              INPUT SOURCE TEXT IN TERMINAL TO RUN VISUALIZER
+            <p className="mt-2 max-w-md font-terminal text-lg text-muted">
+              {isLoading
+                ? "Watch the progress log on the left while the outline is extracted."
+                : "Paste text into the terminal on the left, or load a sample, to run the visualiser."}
             </p>
           </div>
         ) : (
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onNodeClick={onNodeClick}
-            nodeTypes={nodeTypes}
-            fitView
-          >
-            {/* Retro 8-bit Dot Grid Background */}
-            <Background color="#3d1a75" gap={20} size={2} />
-            <Controls className="!bg-[#1a1b35] !border-2 !border-black !shadow-[4px_4px_0px_#000] !rounded-none [&>button]:!border-b-2 [&>button]:!border-black [&>button]:!fill-[#00f0ff]" />
-          </ReactFlow>
+          <>
+            <div className="pointer-events-none absolute left-4 top-4 z-10 max-w-[60%] border-2 border-line bg-surface px-3 py-1.5 shadow-pixel-sm">
+              <p className="truncate font-pixel text-[9px] text-highlight">
+                {mindmap.title}
+              </p>
+              <p className="font-terminal text-sm text-muted">
+                {mindmap.nodes.length} nodes · {mindmap.connections.length}{" "}
+                connections · click a node for its summary
+              </p>
+            </div>
+
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              onNodeClick={handleNodeClick}
+              onPaneClick={() => setSelectedNodeId(null)}
+              nodeTypes={nodeTypes}
+              fitView
+              fitViewOptions={{ padding: 0.2 }}
+              minZoom={0.2}
+              proOptions={{ hideAttribution: true }}
+            >
+              <Background color="var(--grid)" gap={20} size={2} />
+              <Controls className="!rounded-none !border-2 !border-line !bg-surface !shadow-pixel [&>button]:!border-b-2 [&>button]:!border-line [&>button]:!bg-surface [&>button]:!fill-[var(--accent)]" />
+            </ReactFlow>
+          </>
         )}
       </main>
     </div>
